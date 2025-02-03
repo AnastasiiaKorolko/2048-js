@@ -13,11 +13,11 @@ body {
 @keyframes merge {
   from {
     transform: scale(1);
-    background-color: rgb(245, 213, 81);
+    background-color: rgb(236, 220, 154);
   }
   to {
     transform: scale(1.2);
-    background-color: #e5c958;
+    background-color: #b09010;
   }
 }
 
@@ -70,22 +70,22 @@ body {
   }
 
   &--256 {
-    background: #edcc61;
+    background: #aac945;
     color: #f9f6f2;
   }
 
   &--512 {
-    background: #edc850;
+    background: #259412;
     color: #f9f6f2;
   }
 
   &--1024 {
-    background: #edc53f;
+    background: #07441d;
     color: #f9f6f2;
   }
 
   &--2048 {
-    background: #edc22e;
+    background: #2e6eed;
     color: #f9f6f2;
   }
 }

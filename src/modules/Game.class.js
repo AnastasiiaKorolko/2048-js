@@ -234,20 +234,46 @@ class Game {
     this.state[randomCell.y][randomCell.x] = this.generateNumber();
   }
 
+  // isGameOver() {
+  //   if (this.getAvailableCell().length === 0) {
+  //     const directions = [
+  //       { horizontal: false, forward: false },
+  //       { horizontal: true, forward: true },
+  //       { horizontal: false, forward: true },
+  //       { horizontal: true, forward: false },
+  //     ];
+
+  //     return directions.every(({ horizontal, forward }) => {
+  //       const newState = this.moveTiles(horizontal, forward).state;
+
+  //       return !this.isStateDifferent(newState);
+  //     });
+  //   }
+
+  //   return false;
+  // }
+
   isGameOver() {
+    console.log('Checking game over:', this.getAvailableCell().length);
+
     if (this.getAvailableCell().length === 0) {
       const directions = [
-        { horizontal: false, forward: false },
-        { horizontal: true, forward: true },
-        { horizontal: false, forward: true },
-        { horizontal: true, forward: false },
+        () => this.moveLeft(),
+        () => this.moveRight(),
+        () => this.moveUp(),
+        () => this.moveDown()
       ];
 
-      return directions.every(({ horizontal, forward }) => {
-        const newState = this.moveTiles(horizontal, forward).state;
-
-        return !this.isStateDifferent(newState);
+      const isGameOver = directions.every(move => {
+        const currentState = this.cloneState(this.state);
+        move();
+        const isMovePossible = this.isStateDifferent(this.state);
+        this.state = currentState;
+        return !isMovePossible;
       });
+
+      console.log('Game over result:', isGameOver);
+      return isGameOver;
     }
 
     return false;

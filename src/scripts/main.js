@@ -1,11 +1,9 @@
 'use strict';
 
-// Uncomment the next lines to use your game instance in the browser
 const Game = require('../modules/Game.class');
 const game = new Game();
 
-// Write your code here
-function updateTable(state) {
+function updateTable(state, hasStateChanged = false) {
   const fieldRows = document.querySelectorAll('.field-row');
 
   fieldRows.forEach((rowElement, rowIndex) => {
@@ -13,13 +11,14 @@ function updateTable(state) {
 
     rowState.forEach((cellState, columnIndex) => {
       const cellElement = rowElement.children[columnIndex];
+      const previousClass = cellElement.className;
+      const newClass = `field-cell field-cell--${cellState}`;
 
-      cellElement.className = `field-cell field-cell--${cellState}`;
+      cellElement.className = newClass;
       cellElement.innerText = cellState > 0 ? cellState : '';
 
-      if (cellState > 0) {
+      if (hasStateChanged && previousClass !== newClass && cellState > 0) {
         cellElement.classList.add('merge');
-
         setTimeout(() => cellElement.classList.remove('merge'), 600);
       }
     });
@@ -31,6 +30,8 @@ function updateScore(score) {
 }
 
 function updateButton(firstMoveMade) {
+  const button = document.querySelector('.button');
+
   if (firstMoveMade) {
     button.className = 'button restart';
     button.innerText = 'Restart';
@@ -58,8 +59,8 @@ function updateMessage(gameStatus) {
   }
 }
 
-function update() {
-  updateTable(game.getState());
+function update(hasStateChanged = false) {
+  updateTable(game.getState(), hasStateChanged);
   updateScore(game.getScore());
   updateButton(game.getFirstMoveMade());
   updateMessage(game.getStatus());
@@ -68,18 +69,24 @@ function update() {
 const button = document.querySelector('.button');
 
 button.addEventListener('click', () => {
-  switch (button.innerText) {
-    case 'Start':
-      game.start();
-      break;
-    case 'Restart':
-      game.restart();
+  const wasStarted = game.getStatus() !== 'idle';
+
+  if (wasStarted) {
+    game.restart();
+  } else {
+    game.start();
   }
 
-  update();
+  update(true);
 });
 
 document.addEventListener('keydown', (e) => {
+  if (game.getStatus() !== 'playing') {
+    return;
+  }
+
+  const previousState = JSON.stringify(game.getState());
+
   const actions = {
     ArrowUp: () => game.moveUp(),
     ArrowRight: () => game.moveRight(),
@@ -92,7 +99,8 @@ document.addEventListener('keydown', (e) => {
   if (action) {
     e.preventDefault();
     action();
-  }
 
-  update();
+    const hasStateChanged = previousState !== JSON.stringify(game.getState());
+    update(hasStateChanged);
+  }
 });

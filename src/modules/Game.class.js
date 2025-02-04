@@ -1,25 +1,6 @@
-'use strict';
+// 'use strict';
 
-/**
- * This class represents the game.
- * Now it has a basic structure, that is needed for testing.
- * Feel free to add more props and methods if needed.
- */
 class Game {
-  /**
-   * Creates a new game instance.
-   *
-   * @param {number[][]} initialState
-   * The initial state of the board.
-   * @default
-   * [[0, 0, 0, 0],
-   *  [0, 0, 0, 0],
-   *  [0, 0, 0, 0],
-   *  [0, 0, 0, 0]]
-   *
-   * If passed, the board will be initialized with the provided
-   * initial state.
-   */
   constructor(
     initialState = [
       [0, 0, 0, 0],
@@ -42,28 +23,14 @@ class Game {
   moveLeft() {
     if (this.status === 'playing') {
       const resultState = this.state.map((arr) => this.merge(arr, 0));
-
-      if (this.isStateDifferent(resultState)) {
-        this.updateGame({
-          state: resultState,
-          score: this.score,
-          mergedCells: [],
-        });
-      }
+      this.handleMove(resultState);
     }
   }
 
   moveRight() {
     if (this.status === 'playing') {
       const resultState = this.state.map((arr) => this.merge(arr, 1));
-
-      if (this.isStateDifferent(resultState)) {
-        this.updateGame({
-          state: resultState,
-          score: this.score,
-          mergedCells: [],
-        });
-      }
+      this.handleMove(resultState);
     }
   }
 
@@ -72,14 +39,7 @@ class Game {
       const rotatedState = this.rotateMatrix(this.state, 1);
       const resultState = rotatedState.map((row) => this.merge(row, 1));
       const finalState = this.rotateMatrix(resultState, 0);
-
-      if (this.isStateDifferent(finalState)) {
-        this.updateGame({
-          state: finalState,
-          score: this.score,
-          mergedCells: [],
-        });
-      }
+      this.handleMove(finalState);
     }
   }
 
@@ -88,59 +48,43 @@ class Game {
       const rotatedState = this.rotateMatrix(this.state, 1);
       const resultState = rotatedState.map((row) => this.merge(row, 0));
       const finalState = this.rotateMatrix(resultState, 0);
+      this.handleMove(finalState);
+    }
+  }
 
-      if (this.isStateDifferent(finalState)) {
-        this.updateGame({
-          state: finalState,
-          score: this.score,
-          mergedCells: [],
-        });
+  handleMove(newState) {
+    if (this.isStateDifferent(newState)) {
+      this.state = newState;
+      this.firstMoveMade = true;
+      this.putNewNumber();
+
+      if (this.isGameOver()) {
+        this.status = 'lose';
+      } else if (this.isGameWon()) {
+        this.status = 'win';
       }
     }
   }
 
-  /**
-   * @returns {number}
-   */
   getScore() {
     return this.score;
   }
 
-  /**
-   * @returns {number[][]}
-   */
   getState() {
     return this.state;
   }
 
-  /**
-   * Returns the current game status.
-   *
-   * @returns {string} One of: 'idle', 'playing', 'win', 'lose'
-   *
-   * `idle` - the game has not started yet (the initial state);
-   * `playing` - the game is in progress;
-   * `win` - the game is won;
-   * `lose` - the game is lost
-   */
   getStatus() {
     return this.status;
   }
 
-  /**
-   * Starts the game.
-   */
   start() {
     this.restart();
     this.status = 'playing';
-
     this.putNewNumber();
     this.putNewNumber();
   }
 
-  /**
-   * Resets the game.
-   */
   restart() {
     this.state = this.cloneState(this.initialState);
     this.score = 0;
@@ -148,55 +92,12 @@ class Game {
     this.firstMoveMade = false;
   }
 
-  // Add your own methods here
   cloneState(state) {
-    const newState = [];
-
-    for (let row = 0; row < state.length; row++) {
-      newState.push([...state[row]]);
-    }
-
-    return newState;
+    return state.map(row => [...row]);
   }
 
   isStateDifferent(newState) {
-    for (let row = 0; row < this.state.length; row++) {
-      for (let column = 0; column < this.state[row].length; column++) {
-        if (this.state[row][column] !== newState[row][column]) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  updateGame(result) {
-    this.state = result.state;
-    this.firstMoveMade = true;
-    this.putNewNumber();
-
-    result.mergedCells.forEach(({ row, column }) => {
-      const cellElement = document.querySelector(
-        `.field-cell--${this.state[row][column]}[data-row='${row}'][data-column='${column}']`,
-      );
-
-      if (cellElement) {
-        cellElement.classList.add('merge');
-
-        setTimeout(() => {
-          cellElement.classList.remove('merge');
-        }, 600);
-      }
-    });
-
-    if (this.isGameOver()) {
-      this.status = 'lose';
-    } else if (this.isGameWon()) {
-      this.status = 'win';
-    }
-
-
+    return JSON.stringify(this.state) !== JSON.stringify(newState);
   }
 
   getFirstMoveMade() {
@@ -204,118 +105,97 @@ class Game {
   }
 
   getAvailableCell() {
-    const cell = [];
-
+    const cells = [];
     this.state.forEach((row, y) => {
-      row.forEach((number, x) => {
-        if (!number) {
-          cell.push({ x, y });
+      row.forEach((value, x) => {
+        if (!value) {
+          cells.push({ x, y });
         }
       });
     });
-
-    return cell;
-  }
-
-  getRandomElement(arr) {
-    const randomIndex = Math.floor(Math.random() * arr.length);
-
-    return arr[randomIndex];
+    return cells;
   }
 
   generateNumber() {
-    return Math.floor(Math.random() * 10) === 0 ? 4 : 2;
+    return Math.random() < 0.9 ? 2 : 4;
   }
 
   putNewNumber() {
-    const availableCell = this.getAvailableCell();
-    const randomCell = this.getRandomElement(availableCell);
-
-    this.state[randomCell.y][randomCell.x] = this.generateNumber();
+    const availableCells = this.getAvailableCell();
+    if (availableCells.length > 0) {
+      const { x, y } = availableCells[Math.floor(Math.random() * availableCells.length)];
+      this.state[y][x] = this.generateNumber();
+    }
   }
 
-  // isGameOver() {
-  //   if (this.getAvailableCell().length === 0) {
-  //     const directions = [
-  //       { horizontal: false, forward: false },
-  //       { horizontal: true, forward: true },
-  //       { horizontal: false, forward: true },
-  //       { horizontal: true, forward: false },
-  //     ];
-
-  //     return directions.every(({ horizontal, forward }) => {
-  //       const newState = this.moveTiles(horizontal, forward).state;
-
-  //       return !this.isStateDifferent(newState);
-  //     });
-  //   }
-
-  //   return false;
-  // }
-
   isGameOver() {
-    console.log('Checking game over:', this.getAvailableCell().length);
-
     if (this.getAvailableCell().length === 0) {
       const directions = [
-        () => this.moveLeft(),
-        () => this.moveRight(),
-        () => this.moveUp(),
-        () => this.moveDown()
+        () => this.testMove(this.moveLeft.bind(this)),
+        () => this.testMove(this.moveRight.bind(this)),
+        () => this.testMove(this.moveUp.bind(this)),
+        () => this.testMove(this.moveDown.bind(this))
       ];
-
-      const isGameOver = directions.every(move => {
-        const currentState = this.cloneState(this.state);
-        move();
-        const isMovePossible = this.isStateDifferent(this.state);
-        this.state = currentState;
-        return !isMovePossible;
-      });
-
-      console.log('Game over result:', isGameOver);
-      return isGameOver;
+      return directions.every(test => !test());
     }
-
     return false;
   }
 
-  isGameWon() {
-    return this.state.flat().includes(2048);
+  testMove(moveFunction) {
+    const originalState = this.cloneState(this.state);
+    moveFunction();
+    const moved = this.isStateDifferent(originalState);
+    this.state = originalState;
+    return moved;
   }
 
-  rotateMatrix(arr, clockwise) {
+  isGameWon() {
+    return this.state.some(row => row.some(cell => cell === 2048));
+  }
+
+  rotateMatrix(matrix, clockwise) {
+    const N = matrix.length;
+    const result = Array.from({ length: N }, () => Array(N).fill(0));
+
     if (clockwise) {
-      return arr.map((_, colIndex) => {
-        return arr.map((row) => row[colIndex]).reverse();
-      });
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          result[j][N - 1 - i] = matrix[i][j];
+        }
+      }
     } else {
-      return arr.map((_, colIndex) => {
-        return arr.map((row) => row[row.length - 1 - colIndex]);
-      });
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          result[N - 1 - j][i] = matrix[i][j];
+        }
+      }
     }
+    return result;
   }
 
   merge(arr, direction) {
-    const input = direction ? arr.reverse() : arr;
-    const result = input
-      .filter((item) => item)
-      .reduce((acc, item, idx) => {
-        if (acc[idx - 1] === item) {
-          acc[acc.length - 1] += item;
-          this.score += acc[acc.length - 1];
-        } else {
-          acc.push(item);
-        }
+    const input = direction ? [...arr].reverse() : [...arr];
+    const merged = [];
+    let score = 0;
 
-        return acc;
-      }, []);
+    const filtered = input.filter(x => x !== 0);
 
-    const resLength = result.length;
+    for (let i = 0; i < filtered.length; i++) {
+      if (filtered[i] === filtered[i + 1]) {
+        merged.push(filtered[i] * 2);
+        score += filtered[i] * 2;
+        i++;
+      } else {
+        merged.push(filtered[i]);
+      }
+    }
 
-    result.length = arr.length;
-    result.fill(0, resLength, result.length);
+    while (merged.length < arr.length) {
+      merged.push(0);
+    }
 
-    return direction ? result.reverse() : result;
+    this.score += score;
+    return direction ? merged.reverse() : merged;
   }
 }
 
